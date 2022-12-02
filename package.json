@@ -1,0 +1,16 @@
+{
+  "name": "manual-pr-creator",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "create": "node index.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@octokit/core": "^4.1.0",
+    "install": "^0.13.0",
+    "npm": "^9.1.3"
+  }
+}
