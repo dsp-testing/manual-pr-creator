@@ -30,7 +30,7 @@ async function main() {
     let response = await octokit.request("POST /repos/{owner}/{repo}/git/blobs", {
         owner: org,
         repo: repo,
-        content: "Hello world!",
+        content: "Hello blob!",
         encoding: "utf-8"
     });
 
@@ -62,6 +62,12 @@ async function main() {
                 mode: "100644",
                 type: "blob",
                 sha: blob.sha
+            },
+            {
+                path: "test2.txt",
+                mode: "100644",
+                type: "blob",
+                content: "Hello content!"
             }
         ],
         base_tree: branch.commit.sha
