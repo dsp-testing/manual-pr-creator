@@ -1,5 +1,6 @@
 const { Octokit } = require("@octokit/core");
 const readline = require("readline");
+const fs = require("fs");
 
 async function main() {
     if (process.env.PAT === undefined) {
@@ -21,25 +22,38 @@ async function main() {
     const base = await q("Enter the base branch name: ")
     rl.close()
 
+    const filename = `log-${Math.round(new Date().getTime()/1000)}.txt`
+    fs.appendFileSync(filename, `Creating branch '${branchName}' in '${org}/${repo}' from '${base}'\n\n`)
+
     const octokit = new Octokit({auth: process.env.LOCAL_GITHUB_ACCESS_TOKEN});
 
-    const { data: blob } = await octokit.request("POST /repos/{owner}/{repo}/git/blobs", {
+    let response = await octokit.request("POST /repos/{owner}/{repo}/git/blobs", {
         owner: org,
         repo: repo,
         content: "Hello world!",
         encoding: "utf-8"
     });
 
-    console.log(blob);
+    fs.appendFileSync(filename, JSON.stringify(response, null, 2) + "\n\n")
 
-    const { data: branch } = await octokit.request("GET /repos/{owner}/{repo}/branches/main", {
+    if (response.status !== 201) {
+        return console.error("Failed to create blob")
+    }
+    const blob = response.data
+
+    response = await octokit.request("GET /repos/{owner}/{repo}/branches/main", {
         owner: org,
         repo: repo
     });
 
-    console.log(branch);
+    fs.appendFileSync(filename, JSON.stringify(response, null, 2) + "\n\n")
 
-    const { data: tree } = await octokit.request("POST /repos/{owner}/{repo}/git/trees", {
+    if (response.status !== 200) {
+        return console.error("Failed to get branch")
+    }
+    const branch = response.data
+
+    response = await octokit.request("POST /repos/{owner}/{repo}/git/trees", {
         owner: org,
         repo: repo,
         tree: [
@@ -53,9 +67,14 @@ async function main() {
         base_tree: branch.commit.sha
     });
 
-    console.log(tree);
+    fs.appendFileSync(filename, JSON.stringify(response, null, 2) + "\n\n")
 
-    const { data: commit } = await octokit.request("POST /repos/{owner}/{repo}/git/commits", {
+    if (response.status !== 201) {
+        return console.error("Failed to create tree")
+    }
+    const tree = response.data
+
+    response = await octokit.request("POST /repos/{owner}/{repo}/git/commits", {
         owner: org,
         repo: repo,
         message: "test commit",
@@ -63,18 +82,27 @@ async function main() {
         parents: [branch.commit.sha]
     });
 
-    console.log(commit);
+    fs.appendFileSync(filename, JSON.stringify(response, null, 2) + "\n\n")
 
-    const { data: newBranch } = await octokit.request("POST /repos/{owner}/{repo}/git/refs", {
+    if (response.status !== 201) {
+        return console.error("Failed to create commit")
+    }
+    const commit = response.data
+
+    response = await octokit.request("POST /repos/{owner}/{repo}/git/refs", {
         owner: org,
         repo: repo,
         ref: "refs/heads/"+branchName,
         sha: commit.sha
     });
 
-    console.log(newBranch);
+    fs.appendFileSync(filename, JSON.stringify(response, null, 2) + "\n\n")
 
-    const { data: pullRequest } = await octokit.request("POST /repos/{owner}/{repo}/pulls", {
+    if (response.status !== 201) {
+        return console.error("Failed to create branch")
+    }
+
+    response = await octokit.request("POST /repos/{owner}/{repo}/pulls", {
         owner: org,
         repo: repo,
         title: "test PR",
@@ -82,7 +110,13 @@ async function main() {
         base: base
     });
 
-    console.log(pullRequest);
+    fs.appendFileSync(filename, JSON.stringify(response, null, 2) + "\n\n")
+
+    if (response.status !== 201) {
+        return console.error("Failed to create pull request")
+    }
+
+    console.log("PR created: "+response.data.html_url)
 }
 
 main().catch(console.error);
