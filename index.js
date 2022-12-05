@@ -25,7 +25,7 @@ async function main() {
     const filename = `log-${Math.round(new Date().getTime()/1000)}.txt`
     fs.appendFileSync(filename, `Creating branch '${branchName}' in '${org}/${repo}' from '${base}'\n\n`)
 
-    const octokit = new Octokit({auth: process.env.LOCAL_GITHUB_ACCESS_TOKEN});
+    const octokit = new Octokit({auth: process.env.PAT});
 
     let response = await octokit.request("POST /repos/{owner}/{repo}/git/blobs", {
         owner: org,
